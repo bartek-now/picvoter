@@ -51,7 +51,49 @@ function applyCrop(img, crop) {
   img.style.left = `${-100 * x / size}%`;
   img.style.top = `${-100 * y / size}%`;
 }
+const hoverPreview = document.createElement('div');
+hoverPreview.className = 'hover-preview';
+hoverPreview.hidden = true;
+hoverPreview.setAttribute('aria-hidden', 'true');
+hoverPreview.innerHTML = '<div class="hover-photo-view"><img alt=""></div><p></p>';
+document.body.append(hoverPreview);
+let previewTimer;
+function hidePreview() {
+  clearTimeout(previewTimer);
+  hoverPreview.hidden = true;
+}
+function showPreview(button, index) {
+  if ($('#photo-dialog').open) return;
+  const { frame, file, label, crop } = photoViews[index];
+  const image = hoverPreview.querySelector('img');
+  image.src = `/photos/${file}`;
+  applyCrop(image, crop);
+  hoverPreview.querySelector('p').textContent = `Frame ${String(frame + 1).padStart(2, '0')} · ${label}`;
+  const width = Math.min(360, window.innerWidth - 32, (window.innerHeight - 80) * 3 / 4);
+  hoverPreview.style.width = `${width}px`;
+  hoverPreview.hidden = false;
+  const rect = button.getBoundingClientRect();
+  const height = hoverPreview.getBoundingClientRect().height;
+  const right = rect.right + 16;
+  const left = right + width <= window.innerWidth - 16 ? right : rect.left - width - 16;
+  hoverPreview.style.left = `${Math.max(16, Math.min(left, window.innerWidth - width - 16))}px`;
+  hoverPreview.style.top = `${Math.max(16, Math.min(rect.top + (rect.height - height) / 2, window.innerHeight - height - 16))}px`;
+}
+function attachPreview(button, index) {
+  button.addEventListener('pointerenter', event => {
+    if (event.pointerType !== 'mouse' || !matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    hidePreview();
+    previewTimer = setTimeout(() => showPreview(button, index), 140);
+  });
+  button.addEventListener('pointerleave', hidePreview);
+  button.addEventListener('focus', () => { if (button.matches(':focus-visible')) showPreview(button, index); });
+  button.addEventListener('blur', hidePreview);
+}
+window.addEventListener('scroll', hidePreview, { capture: true, passive: true });
+window.addEventListener('resize', hidePreview);
+document.addEventListener('keydown', event => { if (event.key === 'Escape') hidePreview(); });
 function showPhoto(index) {
+  hidePreview();
   currentPhoto = (index + photoViews.length) % photoViews.length;
   const { frame, file, label, crop } = photoViews[currentPhoto];
   $('#large-photo').src = `/photos/${file}`;
@@ -107,7 +149,9 @@ async function init() {
       card.innerHTML = `<div class="photos">${pair.photos.map((photo, view) => `<button type="button" class="photo" aria-label="Enlarge Frame ${index + 1}, ${view ? 'selfie' : 'mirror close-up'}"><img src="/photos/${photo}" alt="Person wearing Frame ${index + 1}, ${view ? 'selfie' : 'mirror close-up'}" width="1050" height="1400" ${index > 1 ? 'loading="lazy"' : 'fetchpriority="high"'}><span>${view ? 'Selfie' : 'Mirror close-up'} ↗</span></button>`).join('')}</div><div class="card-info"><span class="frame-name"><span>${String(index + 1).padStart(2, '0')}</span> Frame ${String(index + 1).padStart(2, '0')}</span><button type="button" class="pick-button"></button></div>`;
       card.querySelectorAll('.photo').forEach((button, view) => {
         applyCrop(button.querySelector('img'), view ? null : pair.mirrorCrop);
-        button.addEventListener('click', () => showPhoto(photoViews.findIndex(photo => photo.frame === index && photo.file === pair.photos[view])));
+        const photoIndex = photoViews.findIndex(photo => photo.frame === index && photo.file === pair.photos[view]);
+        attachPreview(button, photoIndex);
+        button.addEventListener('click', () => showPhoto(photoIndex));
       });
       for (const photo of pair.extraPhotos || []) {
         const button = document.createElement('button'); button.type = 'button'; button.className = 'extra-photo'; button.textContent = `${photo.label} ↗`;

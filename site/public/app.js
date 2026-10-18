@@ -69,7 +69,7 @@ function showPreview(button, index) {
   image.src = `/photos/${file}`;
   applyCrop(image, crop);
   hoverPreview.querySelector('p').textContent = `Frame ${String(frame + 1).padStart(2, '0')} · ${label}`;
-  const width = Math.min(360, window.innerWidth - 32, (window.innerHeight - 80) * 3 / 4);
+  const width = Math.min(460, window.innerWidth - 32, (window.innerHeight - 80) * 3 / 4);
   hoverPreview.style.width = `${width}px`;
   hoverPreview.hidden = false;
   const rect = button.getBoundingClientRect();
@@ -146,7 +146,7 @@ async function init() {
     } catch { /* A bad draft must never prevent voting. */ }
     $('#gallery').replaceChildren(...pairs.map((pair, index) => {
       const card = document.createElement('article'); card.className = 'frame-card'; card.id = `frame-${index}`;
-      card.innerHTML = `<div class="photos">${pair.photos.map((photo, view) => `<button type="button" class="photo" aria-label="Enlarge Frame ${index + 1}, ${view ? 'selfie' : 'mirror close-up'}"><img src="/photos/${photo}" alt="Person wearing Frame ${index + 1}, ${view ? 'selfie' : 'mirror close-up'}" width="1050" height="1400" ${index > 1 ? 'loading="lazy"' : 'fetchpriority="high"'}><span>${view ? 'Selfie' : 'Mirror close-up'} ↗</span></button>`).join('')}</div><div class="card-info"><span class="frame-name"><span>${String(index + 1).padStart(2, '0')}</span> Frame ${String(index + 1).padStart(2, '0')}</span><button type="button" class="pick-button"></button></div>`;
+      card.innerHTML = `<div class="photos">${pair.photos.map((photo, view) => `<button type="button" class="photo" aria-label="Enlarge Frame ${index + 1}, ${view ? 'selfie' : 'mirror close-up'}"><img src="/photos/${photo}" alt="Person wearing Frame ${index + 1}, ${view ? 'selfie' : 'mirror close-up'}" width="1050" height="1400" ${index > 1 ? 'loading="lazy"' : 'fetchpriority="high"'}><span>${view ? 'Selfie' : 'Mirror close-up'}<small class="enlarge-hint">Click to enlarge &#8599;</small></span></button>`).join('')}</div><div class="card-info"><span class="frame-name"><span>${String(index + 1).padStart(2, '0')}</span> Frame ${String(index + 1).padStart(2, '0')}</span><button type="button" class="pick-button"></button></div>`;
       card.querySelectorAll('.photo').forEach((button, view) => {
         applyCrop(button.querySelector('img'), view ? null : pair.mirrorCrop);
         const photoIndex = photoViews.findIndex(photo => photo.frame === index && photo.file === pair.photos[view]);

@@ -9,3 +9,8 @@
 .hover-photo-view{position:relative;overflow:hidden;aspect-ratio:3/4;border-radius:7px;background:#e6e4dc}
 .hover-photo-view img{position:absolute;height:auto;max-width:none;max-height:none;aspect-ratio:3/4}
 .hover-preview p{margin:8px 4px 3px;font-size:12px;line-height:18px;color:var(--green)}
+
+.photo{cursor:zoom-in}
+.photo .enlarge-hint{display:block;margin-top:3px;font-size:10px;font-weight:600;color:var(--green)}
+.gallery-hint{margin:-10px 0 20px;color:var(--green);font-size:12px;line-height:1.6}
+@media(hover:none){.hover-instruction{display:none}}

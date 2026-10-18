@@ -1,3 +1,5 @@
+import { sortPairs } from '../public/pair-utils.js';
+
 export function validateBallot(value, pairs) {
   if (!value || typeof value !== 'object') throw new Error('Invalid vote.');
   const { ballotId, name, ranking } = value;
@@ -13,7 +15,7 @@ export function isNameConflict(error) {
   return false;
 }
 export function summarize(ballots, pairs) {
-  const rows = pairs.map((pair, index) => ({ filename: pair.id, frame: index + 1, points: 0, firstPlaceVotes: 0, rankedVotes: 0, ranks: Array(pairs.length).fill(0) }));
+  const rows = sortPairs(pairs).map((pair, index) => ({ filename: pair.id, frame: index + 1, points: 0, firstPlaceVotes: 0, rankedVotes: 0, ranks: Array(pairs.length).fill(0) }));
   for (const ballot of ballots) {
     const ranking = typeof ballot.ranking === 'string' ? JSON.parse(ballot.ranking) : ballot.ranking;
     ranking.forEach((id, index) => {

@@ -1,4 +1,4 @@
-param([string]$Source = (Join-Path $PSScriptRoot '../.work/originals'))
+param([string]$Source = (Join-Path $PSScriptRoot '../.work/originals'), [switch]$OnlyMissing)
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 $destination = Join-Path $PSScriptRoot '../site/public/photos'
@@ -10,6 +10,7 @@ $parameters.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter ([Syst
 foreach ($pair in $pairs) {
  $allPhotos = @($pair.photos) + @($pair.extraPhotos | ForEach-Object { $_.file })
  foreach ($photo in $allPhotos | Where-Object { $_ }) {
+  if ($OnlyMissing -and (Test-Path -LiteralPath (Join-Path $destination $photo))) { continue }
   $original = [System.Drawing.Image]::FromFile((Join-Path $Source $photo))
   try {
    if ($original.PropertyIdList -contains 274) {
@@ -19,7 +20,9 @@ foreach ($pair in $pairs) {
      8 { $original.RotateFlip(3) }
     }
    }
-   $maxSize = if ($photo -eq $pair.photos[0]) { 3000.0 } else { 1400.0 }
+   $viewIndex = [array]::IndexOf([array]$pair.photos, $photo)
+   $hasCrop = ($photo -eq $pair.photos[0]) -or ($viewIndex -ge 0 -and $pair.photoCrops -and $pair.photoCrops[$viewIndex])
+   $maxSize = if ($hasCrop) { 3000.0 } else { 1400.0 }
    $scale = [math]::Min(1.0, $maxSize / [math]::Max($original.Width,$original.Height))
    $resized = New-Object System.Drawing.Bitmap ([int]($original.Width*$scale)),([int]($original.Height*$scale))
    $graphics = [System.Drawing.Graphics]::FromImage($resized)

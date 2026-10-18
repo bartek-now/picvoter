@@ -1,3 +1,4 @@
+import { sortPairs, photoCrop, photoLabel } from './pair-utils.js';
 const $ = (selector) => document.querySelector(selector);
 const ordinal = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th')}`;
 let pairs = [], photoViews = [], ranking = [], busy = false, currentPhoto = 0, saved = false;
@@ -130,12 +131,13 @@ async function init() {
   try {
     const response = await fetch('/pairs.json');
     if (!response.ok) throw new Error('Could not load the photos. Refresh to try again.');
-    pairs = await response.json();
+    pairs = sortPairs(await response.json());
     photoViews = pairs.flatMap((pair, frame) => [
-      ...pair.photos.map((file, view) => ({ frame, file, label: view ? 'Selfie' : 'Mirror close-up', crop: view ? null : pair.mirrorCrop })),
+      ...pair.photos.map((file, view) => ({ frame, file, label: photoLabel(pair, view), crop: photoCrop(pair, view) })),
       ...(pair.extraPhotos || []).map(photo => ({ frame, file: photo.file, label: photo.label, crop: null })),
     ]);
     $('#options-count').textContent = `${pairs.length} frames · paired views`;
+    $('#frame-count').textContent = `${pairs.length} FRAMES. ONE DECISION.`;
     try {
       const draft = JSON.parse(localStorage.getItem(storageKey));
       if (draft && /^[0-9a-f-]{36}$/i.test(draft.ballotId)) {
@@ -146,9 +148,9 @@ async function init() {
     } catch { /* A bad draft must never prevent voting. */ }
     $('#gallery').replaceChildren(...pairs.map((pair, index) => {
       const card = document.createElement('article'); card.className = 'frame-card'; card.id = `frame-${index}`;
-      card.innerHTML = `<div class="photos">${pair.photos.map((photo, view) => `<button type="button" class="photo" aria-label="Enlarge Frame ${index + 1}, ${view ? 'selfie' : 'mirror close-up'}"><img src="/photos/${photo}" alt="Person wearing Frame ${index + 1}, ${view ? 'selfie' : 'mirror close-up'}" width="1050" height="1400" ${index > 1 ? 'loading="lazy"' : 'fetchpriority="high"'}><span>${view ? 'Selfie' : 'Mirror close-up'}<small class="enlarge-hint">Click to enlarge &#8599;</small></span></button>`).join('')}</div><div class="card-info"><span class="frame-name"><span>${String(index + 1).padStart(2, '0')}</span> Frame ${String(index + 1).padStart(2, '0')}</span><button type="button" class="pick-button"></button></div>`;
+      card.innerHTML = `<div class="photos">${pair.photos.map((photo, view) => `<button type="button" class="photo" aria-label="Enlarge Frame ${index + 1}, ${photoLabel(pair, view).toLowerCase()}"><img src="/photos/${photo}" alt="Person wearing Frame ${index + 1}, ${photoLabel(pair, view).toLowerCase()}" width="1050" height="1400" ${index > 1 ? 'loading="lazy"' : 'fetchpriority="high"'}><span>${photoLabel(pair, view)}<small class="enlarge-hint">Click to enlarge &#8599;</small></span></button>`).join('')}</div><div class="card-info"><span class="frame-name"><span>${String(index + 1).padStart(2, '0')}</span> Frame ${String(index + 1).padStart(2, '0')}</span><button type="button" class="pick-button"></button></div>`;
       card.querySelectorAll('.photo').forEach((button, view) => {
-        applyCrop(button.querySelector('img'), view ? null : pair.mirrorCrop);
+        applyCrop(button.querySelector('img'), photoCrop(pair, view));
         const photoIndex = photoViews.findIndex(photo => photo.frame === index && photo.file === pair.photos[view]);
         attachPreview(button, photoIndex);
         button.addEventListener('click', () => showPhoto(photoIndex));

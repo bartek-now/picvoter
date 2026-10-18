@@ -17,7 +17,7 @@ npm run build
 
 Setup creates ignored local configuration and generic placeholder photos from the checked-in examples. It never replaces existing photos or settings.
 
-Edit `site/public/pairs.json` to configure your own pairs, and put the files in `site/public/photos/`. Each pair's `id` is its permanent score key; keep existing IDs unchanged after voting starts. `mirrorCrop` controls the crop in the gallery and enlarged view. Your photos, pair mapping, and crop settings stay local and are excluded from Git.
+Edit `site/public/pairs.json` to configure your own pairs, and put the files in `site/public/photos/`. Each pair's `id` is its permanent score key; keep existing IDs unchanged after voting starts. `mirrorCrop` controls the first-photo crop in the gallery and enlarged view. Optional `photoCrops` and `photoLabels` arrays configure each view separately. Your photos, pair mapping, and crop settings stay local and are excluded from Git.
 
 Prepare oriented, metadata-free JPEG copies of your own photos on Windows:
 
@@ -37,7 +37,7 @@ The server prints its URL, usually `http://localhost:5173`. Local and hosted dat
 
 ## Voting and results
 
-Voters enter a name and rank one or more frames. With eight frames, ranks award 8 through 1 points; unranked frames get zero. Scores use the current option count. Ties sort by first-place votes, then score key.
+Voters enter a name and rank one or more frames. With N frames, ranks award N through 1 points; unranked frames get zero. Scores use the current option count. Frames display in filename order; ballots retain permanent filename IDs when frames are reordered or added. Ties sort by first-place votes, then score key.
 
 A random browser ballot ID makes retries and edits update the existing vote. Browser storage retains the draft; D1 stores submissions. Names are self-reported but unique across ballots (ignoring letter case for A-Z and surrounding spaces). If a name is taken, add a surname initial, such as Alex M. The same browser can update its own ballot; another browser cannot claim the same name.
 

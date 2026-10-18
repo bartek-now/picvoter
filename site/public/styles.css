@@ -14,3 +14,8 @@
 .photo .enlarge-hint{display:block;margin-top:3px;font-size:10px;font-weight:600;color:var(--green)}
 .gallery-hint{margin:-10px 0 20px;color:var(--green);font-size:12px;line-height:1.6}
 @media(hover:none){.hover-instruction{display:none}}
+#photo-dialog{padding:12px;width:min(900px,calc(100vw - 24px),max(280px,calc((100dvh - 150px)*.75 + 24px)));max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:hidden}
+#photo-dialog .large-photo-view{width:min(100%,max(1px,calc((100dvh - 150px)*.75)));min-width:0;max-width:100%;overflow:clip;contain:paint;background:#e6e4dc}
+#photo-dialog .dialog-top,#photo-dialog .dialog-bottom{min-width:0;gap:8px}
+#photo-caption{min-width:0;overflow-wrap:anywhere}
+#photo-dialog button{flex-shrink:0}

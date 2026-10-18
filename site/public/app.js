@@ -1,4 +1,5 @@
 import { sortPairs, photoCrop, photoLabel } from './pair-utils.js';
+import { createPhotoLoader } from './photo-loader.js';
 const $ = (selector) => document.querySelector(selector);
 const ordinal = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th')}`;
 let pairs = [], photoViews = [], ranking = [], busy = false, currentPhoto = 0, saved = false;
@@ -58,27 +59,36 @@ hoverPreview.hidden = true;
 hoverPreview.setAttribute('aria-hidden', 'true');
 hoverPreview.innerHTML = '<div class="hover-photo-view"><img alt=""></div><p></p>';
 document.body.append(hoverPreview);
+const previewLoader = createPhotoLoader();
+const photoLoader = createPhotoLoader();
 let previewTimer;
 function hidePreview() {
   clearTimeout(previewTimer);
+  previewLoader.cancel();
   hoverPreview.hidden = true;
 }
 function showPreview(button, index) {
   if ($('#photo-dialog').open) return;
   const { frame, file, label, crop } = photoViews[index];
-  const image = hoverPreview.querySelector('img');
-  image.src = `/photos/${file}`;
-  applyCrop(image, crop);
-  hoverPreview.querySelector('p').textContent = `Frame ${String(frame + 1).padStart(2, '0')} · ${label}`;
-  const width = Math.min(460, window.innerWidth - 32, (window.innerHeight - 80) * 3 / 4);
-  hoverPreview.style.width = `${width}px`;
-  hoverPreview.hidden = false;
-  const rect = button.getBoundingClientRect();
-  const height = hoverPreview.getBoundingClientRect().height;
-  const right = rect.right + 16;
-  const left = right + width <= window.innerWidth - 16 ? right : rect.left - width - 16;
-  hoverPreview.style.left = `${Math.max(16, Math.min(left, window.innerWidth - width - 16))}px`;
-  hoverPreview.style.top = `${Math.max(16, Math.min(rect.top + (rect.height - height) / 2, window.innerHeight - height - 16))}px`;
+  hoverPreview.hidden = true;
+  previewLoader.load({
+    src: `/photos/${file}`,
+    prepare(image) { image.alt = ''; applyCrop(image, crop); },
+    onReady(image) {
+      if ($('#photo-dialog').open) return;
+      hoverPreview.querySelector('.hover-photo-view').replaceChildren(image);
+      hoverPreview.querySelector('p').textContent = `Frame ${String(frame + 1).padStart(2, '0')} · ${label}`;
+      const width = Math.min(460, window.innerWidth - 32, (window.innerHeight - 80) * 3 / 4);
+      hoverPreview.style.width = `${width}px`;
+      hoverPreview.hidden = false;
+      const rect = button.getBoundingClientRect();
+      const height = hoverPreview.getBoundingClientRect().height;
+      const right = rect.right + 16;
+      const left = right + width <= window.innerWidth - 16 ? right : rect.left - width - 16;
+      hoverPreview.style.left = `${Math.max(16, Math.min(left, window.innerWidth - width - 16))}px`;
+      hoverPreview.style.top = `${Math.max(16, Math.min(rect.top + (rect.height - height) / 2, window.innerHeight - height - 16))}px`;
+    },
+  });
 }
 function attachPreview(button, index) {
   button.addEventListener('pointerenter', event => {
@@ -97,13 +107,30 @@ function showPhoto(index) {
   hidePreview();
   currentPhoto = (index + photoViews.length) % photoViews.length;
   const { frame, file, label, crop } = photoViews[currentPhoto];
-  $('#large-photo').src = `/photos/${file}`;
-  $('#large-photo').alt = `Frame ${frame + 1}, ${label}`;
-  applyCrop($('#large-photo'), crop);
-  $('#photo-caption').textContent = `Frame ${String(frame + 1).padStart(2, '0')} · ${label}`;
-  if (!$('#photo-dialog').open) $('#photo-dialog').showModal();
+  const view = $('.large-photo-view');
+  view.setAttribute('aria-busy', 'true');
+  if (!$('#photo-dialog').open) {
+    view.replaceChildren();
+    $('#photo-caption').textContent = 'Loading photo…';
+    $('#photo-dialog').showModal();
+  }
+  photoLoader.load({
+    src: `/photos/${file}`,
+    prepare(image) { image.id = 'large-photo'; image.alt = `Frame ${frame + 1}, ${label}`; applyCrop(image, crop); },
+    onReady(image) {
+      if (!$('#photo-dialog').open) return;
+      view.replaceChildren(image);
+      view.removeAttribute('aria-busy');
+      $('#photo-caption').textContent = `Frame ${String(frame + 1).padStart(2, '0')} · ${label}`;
+    },
+    onError() {
+      view.removeAttribute('aria-busy');
+      $('#photo-caption').textContent = 'Could not load this photo. Try the previous or next view.';
+    },
+  });
 }
 $('#close-photo').addEventListener('click', () => $('#photo-dialog').close());
+$('#photo-dialog').addEventListener('close', () => { photoLoader.cancel(); $('.large-photo-view').removeAttribute('aria-busy'); });
 $('#photo-dialog').addEventListener('click', event => { if (event.target === $('#photo-dialog')) { const r = event.target.getBoundingClientRect(); if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) event.target.close(); } });
 $('#previous-photo').addEventListener('click', () => showPhoto(currentPhoto - 1));
 $('#next-photo').addEventListener('click', () => showPhoto(currentPhoto + 1));

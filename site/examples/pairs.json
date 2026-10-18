@@ -1,0 +1,10 @@
+[
+  { "id": "frame-01.svg", "photos": ["frame-01.svg", "frame-01-close.svg"], "mirrorCrop": { "x": 0, "y": 0, "size": 1 } },
+  { "id": "frame-02.svg", "photos": ["frame-02.svg", "frame-02-close.svg"], "mirrorCrop": { "x": 0, "y": 0, "size": 1 } },
+  { "id": "frame-03.svg", "photos": ["frame-03.svg", "frame-03-close.svg"], "mirrorCrop": { "x": 0, "y": 0, "size": 1 } },
+  { "id": "frame-04.svg", "photos": ["frame-04.svg", "frame-04-close.svg"], "mirrorCrop": { "x": 0, "y": 0, "size": 1 } },
+  { "id": "frame-05.svg", "photos": ["frame-05.svg", "frame-05-close.svg"], "mirrorCrop": { "x": 0, "y": 0, "size": 1 } },
+  { "id": "frame-06.svg", "photos": ["frame-06.svg", "frame-06-close.svg"], "mirrorCrop": { "x": 0, "y": 0, "size": 1 } },
+  { "id": "frame-07.svg", "photos": ["frame-07.svg", "frame-07-close.svg"], "mirrorCrop": { "x": 0, "y": 0, "size": 1 } },
+  { "id": "frame-08.svg", "photos": ["frame-08.svg", "frame-08-close.svg"], "mirrorCrop": { "x": 0, "y": 0, "size": 1 } }
+]

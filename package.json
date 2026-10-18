@@ -1,0 +1,10 @@
+{
+  "name": "picvoter",
+  "private": true,
+  "scripts": {
+    "setup": "node scripts/setup-local.mjs",
+    "dev": "npm --prefix site run dev",
+    "build": "npm --prefix site run build",
+    "test": "node --test site/tests/*.test.mjs"
+  }
+}

@@ -19,3 +19,6 @@
 #photo-dialog .dialog-top,#photo-dialog .dialog-bottom{min-width:0;gap:8px}
 #photo-caption{min-width:0;overflow-wrap:anywhere}
 #photo-dialog button{flex-shrink:0}
+.results-main .delete-vote{margin:0;padding:8px 12px;border:1px solid #d9b6aa;border-radius:6px;background:transparent;color:#a13826;white-space:nowrap}
+.delete-vote:hover{background:#f7e8e2}
+.delete-vote:disabled{opacity:.5;cursor:wait}

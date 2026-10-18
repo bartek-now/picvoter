@@ -41,7 +41,7 @@ Voters enter a name and rank one or more frames. With N frames, ranks award N th
 
 A random browser ballot ID makes retries and edits update the existing vote. Browser storage retains the draft; D1 stores submissions. Names are self-reported but unique across ballots (ignoring letter case for A-Z and surrounding spaces). If a name is taken, add a surname initial, such as Alex M. The same browser can update its own ballot; another browser cannot claim the same name.
 
-Open `/results.html` and enter the results key to see scores, named ballots, and export JSON. Configure hosted `RESULTS_KEY` as a runtime secret. Neither names nor scores are exposed by the results API without this key.
+Open `/results.html` and enter the results key to see scores, named ballots, export JSON, and delete an individual vote after confirmation. Deletion requires the results key and refuses to delete a vote that changed since you loaded it. Configure hosted `RESULTS_KEY` as a runtime secret. Neither names nor scores are exposed by the results API without this key.
 
 ## Hosting and private files
 

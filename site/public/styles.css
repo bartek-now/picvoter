@@ -23,8 +23,11 @@
 .delete-vote:hover{background:#f7e8e2}
 .delete-vote:disabled{opacity:.5;cursor:wait}
 .results-pair{display:flex;gap:4px;width:max-content}
-.results-photo{display:block;position:relative;overflow:hidden;width:60px;aspect-ratio:3/4;border-radius:5px;background:#e6e4dc}
+.results-photo{display:block;position:relative;overflow:hidden;width:76px;aspect-ratio:3/4;border-radius:5px;background:#e6e4dc}
 .results-photo img{position:absolute;display:block;height:auto;max-width:none;aspect-ratio:3/4}
-.results-pair.compact .results-photo{width:30px}
+.results-pair.compact .results-photo{width:40px}
 .results-ranking{display:grid;gap:8px;padding:0;margin:0;list-style:none}
 .results-ranking li{display:flex;align-items:center;gap:10px;white-space:nowrap}
+
+.results-pair:focus-visible{outline:2px solid var(--green);outline-offset:4px;border-radius:5px}
+.results-hover-photos{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}

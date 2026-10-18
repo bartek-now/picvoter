@@ -1,7 +1,50 @@
 import { sortPairs, photoCrop, photoLabel } from './pair-utils.js';
+import { createPhotoLoader } from './photo-loader.js';
 let data, loadedKey = '', busy = false;
 let pairsById = new Map();
 const $ = selector => document.querySelector(selector);
+const pairPreview = document.createElement('div');
+pairPreview.className = 'hover-preview results-hover-preview';
+pairPreview.hidden = true;
+pairPreview.setAttribute('aria-hidden', 'true');
+pairPreview.innerHTML = '<div class="results-hover-photos"></div><p></p>';
+document.body.append(pairPreview);
+const previewLoaders = [createPhotoLoader(), createPhotoLoader()];
+let previewTimer, previewVersion = 0;
+function hidePairPreview() {
+  clearTimeout(previewTimer); previewVersion++;
+  previewLoaders.forEach(loader => loader.cancel());
+  pairPreview.hidden = true;
+}
+function applyPhotoCrop(image, pair, view) {
+  const { x = 0, y = 0, size = 1 } = photoCrop(pair, view) || {};
+  image.style.width = `${100 / size}%`; image.style.left = `${-100 * x / size}%`; image.style.top = `${-100 * y / size}%`;
+}
+async function showPairPreview(source, pair) {
+  const version = ++previewVersion;
+  const images = [];
+  const ready = await Promise.all(pair.photos.map((file, view) => previewLoaders[view].load({
+    src: `/photos/${file}`,
+    prepare(image) { image.alt = ''; applyPhotoCrop(image, pair, view); },
+    onReady(image) { images[view] = image; },
+  })));
+  if (version !== previewVersion || !ready.every(Boolean)) return;
+  pairPreview.querySelector('.results-hover-photos').replaceChildren(...images.map(image => {
+    const pane = document.createElement('div'); pane.className = 'hover-photo-view'; pane.append(image); return pane;
+  }));
+  pairPreview.querySelector('p').textContent = `${pair.frameLabel} · photo pair`;
+  const width = Math.min(620, window.innerWidth - 32, (window.innerHeight - 80) * 1.5);
+  pairPreview.style.width = `${width}px`;
+  pairPreview.hidden = false;
+  const rect = source.getBoundingClientRect(), height = pairPreview.getBoundingClientRect().height;
+  const right = rect.right + 16;
+  const left = right + width <= window.innerWidth - 16 ? right : rect.left - width - 16;
+  pairPreview.style.left = `${Math.max(16, Math.min(left, window.innerWidth - width - 16))}px`;
+  pairPreview.style.top = `${Math.max(16, Math.min(rect.top + (rect.height - height) / 2, window.innerHeight - height - 16))}px`;
+}
+window.addEventListener('scroll', hidePairPreview, { capture: true, passive: true });
+window.addEventListener('resize', hidePairPreview);
+document.addEventListener('keydown', event => { if (event.key === 'Escape') hidePairPreview(); });
 const row = values => {
   const tr = document.createElement('tr');
   for (const value of values) { const td = document.createElement('td'); td.textContent = value; tr.append(td); }
@@ -14,18 +57,27 @@ function setBusy(value) {
 function pairThumbnail(pair, compact = false) {
   const preview = document.createElement('div');
   preview.className = `results-pair${compact ? ' compact' : ''}`;
+  preview.tabIndex = 0;
+  preview.setAttribute('aria-label', `Preview ${pair.frameLabel} photo pair`);
+  preview.addEventListener('pointerenter', event => {
+    if (event.pointerType !== 'mouse' || !matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    hidePairPreview(); previewTimer = setTimeout(() => showPairPreview(preview, pair), 140);
+  });
+  preview.addEventListener('pointerleave', hidePairPreview);
+  preview.addEventListener('focus', () => { if (preview.matches(':focus-visible')) { hidePairPreview(); showPairPreview(preview, pair); } });
+  preview.addEventListener('blur', hidePairPreview);
   pair.photos.forEach((file, view) => {
     const photo = document.createElement('span'); photo.className = 'results-photo';
     const image = document.createElement('img');
     image.src = `/photos/${file}`; image.alt = `${pair.frameLabel}, ${photoLabel(pair, view)}`;
-    image.loading = 'lazy'; image.decoding = 'async'; image.width = 60; image.height = 80;
-    const { x = 0, y = 0, size = 1 } = photoCrop(pair, view) || {};
-    image.style.width = `${100 / size}%`; image.style.left = `${-100 * x / size}%`; image.style.top = `${-100 * y / size}%`;
+    image.loading = 'lazy'; image.decoding = 'async'; image.width = compact ? 40 : 76; image.height = compact ? 54 : 102;
+    applyPhotoCrop(image, pair, view);
     photo.append(image); preview.append(photo);
   });
   return preview;
 }
 function renderResults() {
+  hidePairPreview();
   $('#scores').replaceChildren(...data.scores.map(score => {
     const tr = row([`Frame ${String(score.frame).padStart(2, '0')}`, score.filename, score.points, score.firstPlaceVotes, score.rankedVotes]);
     const photos = document.createElement('td');

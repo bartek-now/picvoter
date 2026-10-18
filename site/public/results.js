@@ -3,6 +3,16 @@ import { createPhotoLoader } from './photo-loader.js';
 let data, loadedKey = '', busy = false;
 let pairsById = new Map();
 const $ = selector => document.querySelector(selector);
+const keyStorage = 'glasses-results-key-v1';
+function savedResultsKey() {
+  try { return sessionStorage.getItem(keyStorage) || ''; } catch { return ''; }
+}
+function rememberResultsKey(key) {
+  try { sessionStorage.setItem(keyStorage, key); } catch { /* Manual loading still works if storage is blocked. */ }
+}
+function clearSavedResultsKey() {
+  try { sessionStorage.removeItem(keyStorage); } catch { /* No saved key when storage is blocked. */ }
+}
 const pairPreview = document.createElement('div');
 pairPreview.className = 'hover-preview results-hover-preview';
 pairPreview.hidden = true;
@@ -110,12 +120,16 @@ function renderResults() {
 async function loadResults(key, notice = '') {
   const response = await fetch('/api/results', { headers: { Authorization: `Bearer ${key}` }, cache: 'no-store' });
   const result = await response.json();
-  if (!response.ok) throw new Error(result.error || 'Could not load results.');
+  if (!response.ok) {
+    if (response.status === 401) clearSavedResultsKey();
+    throw new Error(result.error || 'Could not load results.');
+  }
   const pairsResponse = await fetch('/pairs.json', { cache: 'no-store' });
   if (!pairsResponse.ok) throw new Error('Could not load photo previews. Please try again.');
   const pairs = sortPairs(await pairsResponse.json());
   pairsById = new Map(pairs.map((pair, index) => [pair.id, { ...pair, frameLabel: `Frame ${String(index + 1).padStart(2, '0')}` }]));
   data = result; loadedKey = key;
+  rememberResultsKey(key);
   renderResults();
   $('#results-status').textContent = `${notice}${notice ? ' ' : ''}${data.totalBallots} saved ${data.totalBallots === 1 ? 'vote' : 'votes'}. Ties are ordered by first-place votes, then filename.`;
 }
@@ -138,13 +152,23 @@ async function deleteVote(ballot) {
     $('#results-status').textContent = deleted ? 'Vote deleted, but results could not refresh. Load results again.' : error.message || 'Could not delete the vote.';
   } finally { setBusy(false); }
 }
-$('#results-form').addEventListener('submit', async event => {
-  event.preventDefault();
+async function refreshResults() {
   if (busy) return;
   setBusy(true); data = undefined; $('#results').hidden = true; $('#results-status').textContent = 'Loading…';
   try { await loadResults($('#key').value.trim()); }
   catch (error) { $('#results-status').textContent = error.message || 'Could not load results.'; }
   finally { setBusy(false); }
+}
+$('#results-form').addEventListener('submit', event => {
+  event.preventDefault();
+  refreshResults();
+});
+$('#forget-key').addEventListener('click', () => {
+  if (busy) return;
+  clearSavedResultsKey(); hidePairPreview();
+  loadedKey = ''; data = undefined; $('#key').value = ''; $('#results').hidden = true;
+  $('#results-status').textContent = 'Key cleared from this tab.';
+  $('#key').focus();
 });
 $('#export').addEventListener('click', () => {
   if (!data || busy) return;
@@ -152,3 +176,8 @@ $('#export').addEventListener('click', () => {
   const link = document.createElement('a'); link.href = url; link.download = 'glasses-vote-results.json'; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
+const rememberedKey = savedResultsKey();
+if (rememberedKey) {
+  $('#key').value = rememberedKey;
+  refreshResults();
+}

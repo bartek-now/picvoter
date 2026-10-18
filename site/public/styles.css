@@ -22,3 +22,9 @@
 .results-main .delete-vote{margin:0;padding:8px 12px;border:1px solid #d9b6aa;border-radius:6px;background:transparent;color:#a13826;white-space:nowrap}
 .delete-vote:hover{background:#f7e8e2}
 .delete-vote:disabled{opacity:.5;cursor:wait}
+.results-pair{display:flex;gap:4px;width:max-content}
+.results-photo{display:block;position:relative;overflow:hidden;width:60px;aspect-ratio:3/4;border-radius:5px;background:#e6e4dc}
+.results-photo img{position:absolute;display:block;height:auto;max-width:none;aspect-ratio:3/4}
+.results-pair.compact .results-photo{width:30px}
+.results-ranking{display:grid;gap:8px;padding:0;margin:0;list-style:none}
+.results-ranking li{display:flex;align-items:center;gap:10px;white-space:nowrap}

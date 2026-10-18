@@ -47,7 +47,6 @@ function render() {
 }
 function applyCrop(img, crop) {
   const { x = 0, y = 0, size = 1 } = crop || {};
-  img.style.transformOrigin = `${100 * (x + size / 2)}% ${100 * (y + size / 2)}%`;
   img.style.width = `${100 / size}%`;
   img.style.left = `${-100 * x / size}%`;
   img.style.top = `${-100 * y / size}%`;

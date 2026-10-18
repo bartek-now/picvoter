@@ -39,7 +39,7 @@ The server prints its URL, usually `http://localhost:5173`. Local and hosted dat
 
 Voters enter a name and rank one or more frames. With eight frames, ranks award 8 through 1 points; unranked frames get zero. Scores use the current option count. Ties sort by first-place votes, then score key.
 
-A random browser ballot ID makes retries and edits update the existing vote. Browser storage retains the draft; D1 stores submissions. Names are self-reported, and another browser or cleared storage can submit another ballot.
+A random browser ballot ID makes retries and edits update the existing vote. Browser storage retains the draft; D1 stores submissions. Names are self-reported but unique across ballots (ignoring letter case for A-Z and surrounding spaces). If a name is taken, add a surname initial, such as Alex M. The same browser can update its own ballot; another browser cannot claim the same name.
 
 Open `/results.html` and enter the results key to see scores, named ballots, and export JSON. Configure hosted `RESULTS_KEY` as a runtime secret. Neither names nor scores are exposed by the results API without this key.
 

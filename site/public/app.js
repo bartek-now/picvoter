@@ -66,7 +66,7 @@ $('#previous-photo').addEventListener('click', () => showPhoto(currentPhoto - 1)
 $('#next-photo').addEventListener('click', () => showPhoto(currentPhoto + 1));
 $('#photo-dialog').addEventListener('keydown', event => { if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); showPhoto(currentPhoto + (event.key === 'ArrowLeft' ? -1 : 1)); } });
 $('#clear').addEventListener('click', () => { ranking = []; changed(); render(); document.querySelector('.pick-button').focus(); });
-$('#name').addEventListener('input', () => { changed(); render(); });
+$('#name').addEventListener('input', () => { $('#name').removeAttribute('aria-invalid'); changed(); render(); });
 $('#vote-form').addEventListener('submit', async event => {
   event.preventDefault();
   if (busy || !ranking.length) return;
@@ -77,6 +77,7 @@ $('#vote-form').addEventListener('submit', async event => {
   try {
     const response = await fetch('/api/votes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ballotId, name, ranking: [...ranking] }) });
     const result = await response.json();
+    if (result.code === 'NAME_TAKEN') { $('#name').setAttribute('aria-invalid', 'true'); $('#name').focus(); }
     if (!response.ok) throw new Error(result.error || 'Could not save your vote. Please try again.');
     saved = revision === sentRevision; remember();
     status(saved ? `Thanks, ${name}! Your picks are saved. You can change them and send again to update your vote.` : 'Your vote was saved. Send again to save your latest changes.', 'success');

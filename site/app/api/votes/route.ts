@@ -1,7 +1,7 @@
 import { getDb } from "../../../db";
 import { ballots } from "../../../db/schema";
 import pairs from "../../../public/pairs.json";
-import { validateBallot } from "../../../lib/voting.mjs";
+import { validateBallot, isNameConflict } from "../../../lib/voting.mjs";
 export async function POST(request: Request) {
   const origin = request.headers.get("origin");
   if (origin && origin !== new URL(request.url).origin) return Response.json({ error: "Invalid request origin." }, { status: 403 });
@@ -18,5 +18,8 @@ export async function POST(request: Request) {
   try {
     await getDb().insert(ballots).values(ballot).onConflictDoUpdate({ target: ballots.id, set: { name: ballot.name, ranking: ballot.ranking, updatedAt: ballot.updatedAt } });
     return Response.json({ saved: true }, { headers: { "Cache-Control": "no-store" } });
-  } catch { return Response.json({ error: "Could not save your vote. Please try again." }, { status: 503 }); }
+  } catch (error) {
+    if (isNameConflict(error)) return Response.json({ error: "That name is already taken. Please add your surname initial (for example, Alex M.).", code: "NAME_TAKEN" }, { status: 409 });
+    return Response.json({ error: "Could not save your vote. Please try again." }, { status: 503 });
+  }
 }

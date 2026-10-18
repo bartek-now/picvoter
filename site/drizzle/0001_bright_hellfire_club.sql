@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `ballots_name_unique` ON `ballots` (lower(trim("name")));

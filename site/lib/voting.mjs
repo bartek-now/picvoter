@@ -1,4 +1,4 @@
-import { sortPairs } from '../public/pair-utils.js';
+export { summarize } from '../public/scoring.js';
 
 export function validateBallot(value, pairs) {
   if (!value || typeof value !== 'object') throw new Error('Invalid vote.');
@@ -13,18 +13,4 @@ export function isNameConflict(error) {
     if (/unique constraint failed/i.test(String(error.message)) && /ballots_name_unique/i.test(String(error.message))) return true;
   }
   return false;
-}
-export function summarize(ballots, pairs) {
-  const rows = sortPairs(pairs).map((pair, index) => ({ filename: pair.id, frame: index + 1, points: 0, firstPlaceVotes: 0, rankedVotes: 0, ranks: Array(pairs.length).fill(0) }));
-  for (const ballot of ballots) {
-    const ranking = typeof ballot.ranking === 'string' ? JSON.parse(ballot.ranking) : ballot.ranking;
-    ranking.forEach((id, index) => {
-      const row = rows.find(item => item.filename === id);
-      if (!row) return;
-      row.points += pairs.length - index; row.rankedVotes++; row.ranks[index]++;
-      if (index === 0) row.firstPlaceVotes++;
-    });
-  }
-  rows.sort((a, b) => b.points - a.points || b.firstPlaceVotes - a.firstPlaceVotes || a.filename.localeCompare(b.filename));
-  return { totalBallots: ballots.length, scores: rows, ballots: ballots.map(({ name, ranking, updatedAt }) => ({ name, ranking: typeof ranking === 'string' ? JSON.parse(ranking) : ranking, updatedAt })) };
 }

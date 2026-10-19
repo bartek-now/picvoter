@@ -1,9 +1,11 @@
 import { sortPairs, photoCrop, photoLabel } from './pair-utils.js';
 import { createPhotoLoader } from './photo-loader.js';
+import { summarize } from './scoring.js';
 let data, loadedKey = '', busy = false;
 let pairsById = new Map();
 const $ = selector => document.querySelector(selector);
 const keyStorage = 'glasses-results-key-v1';
+const scoringStorage = 'glasses-results-scoring-v1';
 function savedResultsKey() {
   try { return sessionStorage.getItem(keyStorage) || ''; } catch { return ''; }
 }
@@ -63,6 +65,7 @@ const row = values => {
 function setBusy(value) {
   busy = value;
   document.querySelectorAll('#results button, #results-form button').forEach(button => { button.disabled = value; });
+  $('#average-unranked').disabled = value;
 }
 function pairThumbnail(pair, compact = false) {
   const preview = document.createElement('div');
@@ -88,8 +91,12 @@ function pairThumbnail(pair, compact = false) {
 }
 function renderResults() {
   hidePairPreview();
+  data = summarize(data.ballots, [...pairsById.values()], $('#average-unranked').checked ? 'average' : 'zero');
+  $('#scoring-description').textContent = data.scoringMode === 'average'
+    ? 'Unranked frames share each ballot\'s unused points equally. Ranked frames keep their points.'
+    : 'Unranked frames earn 0 points.';
   $('#scores').replaceChildren(...data.scores.map(score => {
-    const tr = row([`Frame ${String(score.frame).padStart(2, '0')}`, score.filename, score.points, score.firstPlaceVotes, score.ranks[1] ?? 0, score.rankedVotes]);
+    const tr = row([`Frame ${String(score.frame).padStart(2, '0')}`, score.filename, score.points.toLocaleString(undefined, { maximumFractionDigits: 2 }), score.firstPlaceVotes, score.ranks[1] ?? 0, score.rankedVotes]);
     const photos = document.createElement('td');
     const pair = pairsById.get(score.filename);
     if (pair) photos.append(pairThumbnail(pair));
@@ -176,6 +183,12 @@ $('#export').addEventListener('click', () => {
   const link = document.createElement('a'); link.href = url; link.download = 'glasses-vote-results.json'; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
+$('#average-unranked').addEventListener('change', () => {
+  if (!data || busy) return;
+  renderResults();
+  try { sessionStorage.setItem(scoringStorage, data.scoringMode); } catch { /* Switching still works without storage. */ }
+});
+try { $('#average-unranked').checked = sessionStorage.getItem(scoringStorage) === 'average'; } catch { /* Default to zero points for unranked frames. */ }
 const rememberedKey = savedResultsKey();
 if (rememberedKey) {
   $('#key').value = rememberedKey;

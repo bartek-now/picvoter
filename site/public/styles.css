@@ -31,3 +31,11 @@
 
 .results-pair:focus-visible{outline:2px solid var(--green);outline-offset:4px;border-radius:5px}
 .results-hover-photos{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
+.scoring-controls{margin:24px 0 12px;padding:18px;border:1px solid var(--line);border-radius:8px;background:#eeeee4}
+.scoring-switch{display:flex;align-items:center;gap:12px;margin:0;cursor:pointer;width:fit-content;font-size:13px}
+.scoring-switch input{appearance:none;width:44px;max-width:none;height:26px;padding:3px;margin:0;flex-shrink:0;border:1px solid #aeb8a5;border-radius:20px;background:#d2d7c8;cursor:pointer}
+.scoring-switch input::before{content:'';display:block;width:18px;height:18px;border-radius:50%;background:#fffefa;transition:transform .15s}
+.scoring-switch input:checked{background:var(--green);border-color:var(--green)}
+.scoring-switch input:checked::before{transform:translateX(18px)}
+.scoring-switch input:disabled{opacity:.5;cursor:wait}
+.scoring-controls .fine-print{margin:10px 0 0;font-size:12px}

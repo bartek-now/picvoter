@@ -39,3 +39,13 @@
 .scoring-switch input:checked::before{transform:translateX(18px)}
 .scoring-switch input:disabled{opacity:.5;cursor:wait}
 .scoring-controls .fine-print{margin:10px 0 0;font-size:12px}
+.ignored-controls{margin:18px 0;padding:16px 18px;border:1px solid var(--line);border-radius:8px}
+.ignored-controls .ignored-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.ignored-controls p{margin:0;font-size:13px;line-height:1.6}
+.results-main .clear-ignored{margin:0;padding:8px 12px;border:1px solid var(--line);border-radius:6px;background:#fffefa;color:var(--green);min-height:40px}
+.clear-ignored:disabled{opacity:.5;cursor:default}
+.ignored-controls .fine-print{margin-top:8px;font-size:12px}
+.ignore-vote{display:flex;align-items:center;gap:8px;min-height:44px;margin:0;cursor:pointer;white-space:nowrap}
+.ignore-vote input{width:18px;height:18px;max-width:none;padding:0;margin:0;accent-color:var(--green);cursor:pointer}
+.results-main tr.ignored-vote{background:#eeeee4}
+.ignored-vote>td:first-child::after{content:'Ignored';display:block;margin-top:4px;font-size:11px;color:var(--muted)}

@@ -1,11 +1,26 @@
 import { sortPairs, photoCrop, photoLabel } from './pair-utils.js';
 import { createPhotoLoader } from './photo-loader.js';
-import { summarize } from './scoring.js';
-let data, loadedKey = '', busy = false;
+import { summarizeResults, voterKey } from './results-summary.js';
+let data, allBallots = [], loadedKey = '', busy = false;
 let pairsById = new Map();
 const $ = selector => document.querySelector(selector);
 const keyStorage = 'glasses-results-key-v1';
 const scoringStorage = 'glasses-results-scoring-v1';
+const ignoredStorage = 'glasses-results-ignored-v1';
+let ignoredVoters = new Set();
+try {
+  const stored = JSON.parse(localStorage.getItem(ignoredStorage) || '[]');
+  if (Array.isArray(stored)) ignoredVoters = new Set(stored.filter(name => typeof name === 'string').map(voterKey));
+} catch { /* A missing or invalid preference must not prevent loading results. */ }
+function rememberIgnoredVoters() {
+  try { localStorage.setItem(ignoredStorage, JSON.stringify([...ignoredVoters])); return true; }
+  catch { return false; }
+}
+function updateIgnoredVoters() {
+  const remembered = rememberIgnoredVoters();
+  renderResults();
+  if (!remembered) $('#ignored-status').textContent += ' Your browser could not remember this selection; it may reset after refresh.';
+}
 function savedResultsKey() {
   try { return sessionStorage.getItem(keyStorage) || ''; } catch { return ''; }
 }
@@ -64,8 +79,8 @@ const row = values => {
 };
 function setBusy(value) {
   busy = value;
-  document.querySelectorAll('#results button, #results-form button').forEach(button => { button.disabled = value; });
-  $('#average-unranked').disabled = value;
+  document.querySelectorAll('#results button, #results input, #results-form button').forEach(control => { control.disabled = value; });
+  $('#clear-ignored').disabled = value || !ignoredVoters.size;
 }
 function pairThumbnail(pair, compact = false) {
   const preview = document.createElement('div');
@@ -91,7 +106,9 @@ function pairThumbnail(pair, compact = false) {
 }
 function renderResults() {
   hidePairPreview();
-  data = summarize(data.ballots, [...pairsById.values()], $('#average-unranked').checked ? 'average' : 'zero');
+  data = summarizeResults(allBallots, [...pairsById.values()], $('#average-unranked').checked ? 'average' : 'zero', ignoredVoters);
+  $('#ignored-status').textContent = `${data.countedBallots} of ${data.totalBallots} saved votes counted. ${data.ignoredBallots} ignored.`;
+  $('#clear-ignored').disabled = busy || !ignoredVoters.size;
   $('#scoring-description').textContent = data.scoringMode === 'average'
     ? 'Unranked frames share each ballot\'s unused points equally. Ranked frames keep their points.'
     : 'Unranked frames earn 0 points.';
@@ -103,8 +120,9 @@ function renderResults() {
     tr.insertBefore(photos, tr.children[1]);
     return tr;
   }));
-  $('#ballots').replaceChildren(...data.ballots.map(ballot => {
+  $('#ballots').replaceChildren(...data.ballots.map((ballot, index) => {
     const tr = row([ballot.name, '', new Date(ballot.updatedAt).toLocaleString()]);
+    tr.classList.toggle('ignored-vote', ballot.ignored);
     const ranking = document.createElement('ol'); ranking.className = 'results-ranking';
     ballot.ranking.forEach((id, index) => {
       const choice = document.createElement('li');
@@ -114,6 +132,20 @@ function renderResults() {
       label.title = id; choice.append(label); ranking.append(choice);
     });
     tr.children[1].append(ranking);
+    const ignoredCell = document.createElement('td');
+    const ignoreLabel = document.createElement('label'); ignoreLabel.className = 'ignore-vote';
+    const ignore = document.createElement('input');
+    ignore.type = 'checkbox'; ignore.checked = ballot.ignored; ignore.id = `ignore-vote-${index}`;
+    ignore.setAttribute('aria-label', `Ignore vote from ${ballot.name}`);
+    ignore.addEventListener('change', () => {
+      if (busy) return;
+      const key = voterKey(ballot.name);
+      if (ignore.checked) ignoredVoters.add(key); else ignoredVoters.delete(key);
+      updateIgnoredVoters();
+      document.getElementById(ignore.id)?.focus();
+    });
+    const ignoreText = document.createElement('span'); ignoreText.textContent = 'Ignore vote';
+    ignoreLabel.append(ignore, ignoreText); ignoredCell.append(ignoreLabel); tr.append(ignoredCell);
     const actions = document.createElement('td');
     const button = document.createElement('button');
     button.type = 'button'; button.className = 'delete-vote'; button.textContent = 'Delete vote';
@@ -135,7 +167,7 @@ async function loadResults(key, notice = '') {
   if (!pairsResponse.ok) throw new Error('Could not load photo previews. Please try again.');
   const pairs = sortPairs(await pairsResponse.json());
   pairsById = new Map(pairs.map((pair, index) => [pair.id, { ...pair, frameLabel: `Frame ${String(index + 1).padStart(2, '0')}` }]));
-  data = result; loadedKey = key;
+  allBallots = result.ballots; loadedKey = key;
   rememberResultsKey(key);
   renderResults();
   $('#results-status').textContent = `${notice}${notice ? ' ' : ''}${data.totalBallots} saved ${data.totalBallots === 1 ? 'vote' : 'votes'}. Ties are ordered by first-place votes, then filename.`;
@@ -182,6 +214,11 @@ $('#export').addEventListener('click', () => {
   const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
   const link = document.createElement('a'); link.href = url; link.download = 'glasses-vote-results.json'; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+$('#clear-ignored').addEventListener('click', () => {
+  if (!data || busy) return;
+  ignoredVoters.clear();
+  updateIgnoredVoters();
 });
 $('#average-unranked').addEventListener('change', () => {
   if (!data || busy) return;

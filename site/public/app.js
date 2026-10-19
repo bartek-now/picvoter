@@ -14,6 +14,7 @@ function changed() { revision++; saved = false; status(''); remember(); }
 function render() {
   $('#pick-count').textContent = `${ranking.length} / ${pairs.length}`;
   $('#empty-ranking').hidden = ranking.length > 0;
+  $('#second-pick-hint').hidden = ranking.length !== 1 || pairs.length < 2;
   $('#clear').hidden = !ranking.length;
   $('#submit').disabled = busy || !ranking.length;
   $('#submit').textContent = busy ? 'Saving your picks…' : saved ? 'Picks saved ✓' : 'Send my picks ↗';
@@ -164,7 +165,6 @@ async function init() {
       ...(pair.extraPhotos || []).map(photo => ({ frame, file: photo.file, label: photo.label, crop: null })),
     ]);
     $('#options-count').textContent = `${pairs.length} frames · paired views`;
-    $('#frame-count').textContent = `${pairs.length} FRAMES. ONE DECISION.`;
     try {
       const draft = JSON.parse(localStorage.getItem(storageKey));
       if (draft && /^[0-9a-f-]{36}$/i.test(draft.ballotId)) {

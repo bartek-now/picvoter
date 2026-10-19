@@ -89,7 +89,7 @@ function pairThumbnail(pair, compact = false) {
 function renderResults() {
   hidePairPreview();
   $('#scores').replaceChildren(...data.scores.map(score => {
-    const tr = row([`Frame ${String(score.frame).padStart(2, '0')}`, score.filename, score.points, score.firstPlaceVotes, score.rankedVotes]);
+    const tr = row([`Frame ${String(score.frame).padStart(2, '0')}`, score.filename, score.points, score.firstPlaceVotes, score.ranks[1] ?? 0, score.rankedVotes]);
     const photos = document.createElement('td');
     const pair = pairsById.get(score.filename);
     if (pair) photos.append(pairThumbnail(pair));
